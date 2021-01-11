@@ -5,9 +5,11 @@ using UnityEngine;
 
 public class FileReadWrite : MonoBehaviour
 {
+    static string Error = "错误！没有寻找到文件，建议查看文件名称是否输入错误？";
+
     static List<string> datas = new List<string>();
     /// <summary>
-    /// 读文件
+    /// 读取全部文件
     /// </summary>
     /// <param name="txtName">文件名</param>
     /// <returns>返回每行</returns>
@@ -19,7 +21,7 @@ public class FileReadWrite : MonoBehaviour
             sr = File.OpenText(Application.persistentDataPath + "\\" + txtName);//读取文件
         else
         {
-            datas.Add("没有寻找到文件。");
+            datas.Add(Error);
             return datas;
         }
         
@@ -37,7 +39,7 @@ public class FileReadWrite : MonoBehaviour
     }
 
     /// <summary>
-    /// 写文件
+    /// 写入一行文件
     /// </summary>
     /// <param name="txtName">文件名</param>
     /// <param name="data">写入数据</param>
@@ -58,9 +60,40 @@ public class FileReadWrite : MonoBehaviour
         sw.Close();//关闭流
         sw.Dispose();//销毁流
     }
+
+    /// <summary>
+    /// 删除文件
+    /// </summary>
+    /// <param name="txtName"></param>
     public static void DeleteTxt(string txtName)
     {
         FileInfo t = new FileInfo(Application.persistentDataPath + "\\" + txtName);//文件流 
         t.Delete();
+    }
+
+    /// <summary>
+    /// 复制文件内容
+    /// </summary>
+    /// <param name="txtName"></param>
+    /// <returns></returns>
+    public static bool CopyTxt(string txtName)
+    {
+        bool IsCopyTxt = false;
+        string CopyContent = "";
+        ReadData(txtName);
+        foreach (string data in datas)
+        {
+            CopyContent += data + "\n";
+        }
+        if (datas[0]== Error)
+        {
+            IsCopyTxt=false;
+        }
+        else
+        {
+            IsCopyTxt = true;
+        }
+        GUIUtility.systemCopyBuffer = CopyContent;
+        return IsCopyTxt;
     }
 }
