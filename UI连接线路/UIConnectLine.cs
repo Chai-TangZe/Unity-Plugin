@@ -2,8 +2,14 @@
 
 public class UIConnectLine : MonoBehaviour
 {
-    public Canvas canvas;
-    public RectTransform fingerLine;
+    Canvas canvas;
+    public RectTransform Line;
+
+    public UIConnectLine( Canvas canvas, RectTransform line )
+    {
+        this.canvas = canvas;
+        Line = line;
+    }
 
     /// <summary>
     /// 赋予开始位置,下一个位置就是鼠标点
@@ -11,10 +17,6 @@ public class UIConnectLine : MonoBehaviour
     /// <param name="startPos"></param>
     public void UpdateLine( Vector3 startPos, Vector3 touchPos )
     {
-        if (!canvas)
-            canvas = GameObject.Find ("Canvas").GetComponent<Canvas> ();
-        if (!fingerLine)
-            fingerLine = GameObject.Find ("Line").GetComponent<RectTransform> ();
         //Vector3 touchPos = Input.mousePosition;
         Vector3 uiStartPos = Vector3.zero;
         Vector3 uitouchPos = Vector3.zero;
@@ -37,10 +39,10 @@ public class UIConnectLine : MonoBehaviour
                 camera, out uitouchPos);
         }
 
-        fingerLine.pivot = new Vector2 (0, 0.5f);
-        fingerLine.position = startPos;
-        fingerLine.eulerAngles = new Vector3 (0, 0, GetAngle (uiStartPos, uitouchPos));
-        fingerLine.sizeDelta = new Vector2 (GetDistance (uiStartPos, uitouchPos), fingerLine.sizeDelta.y);
+        Line.pivot = new Vector2 (0, 0.5f);
+        Line.position = startPos;
+        Line.eulerAngles = new Vector3 (0, 0, GetAngle (uiStartPos, uitouchPos));
+        Line.sizeDelta = new Vector2 (GetDistance (uiStartPos, uitouchPos), Line.sizeDelta.y);
     }
 
     /// <summary>
@@ -50,9 +52,9 @@ public class UIConnectLine : MonoBehaviour
     /// <param name="startPos"></param>
     /// <param name="endPos"></param>
     /// <returns></returns>
-    public RectTransform SetLine( Vector3 startPos, Vector3 endPos )
+    public RectTransform SetLine( Vector3 startPos, Vector3 endPos)
     {
-        RectTransform lineSource = fingerLine;
+        RectTransform lineSource = Line;
         RectTransform line = Instantiate (lineSource, lineSource.parent);
         line.pivot = new Vector2 (0, 0.5f);
         line.position = startPos;
@@ -60,7 +62,7 @@ public class UIConnectLine : MonoBehaviour
         line.sizeDelta = new Vector2 (GetDistance (startPos, endPos), lineSource.sizeDelta.y);
         return line;
     }
-    
+
     private float GetAngle( Vector3 startPos, Vector3 endPos )
     {
         Vector3 dir = endPos - startPos;
