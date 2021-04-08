@@ -54,7 +54,7 @@
         Tags { "RenderType"="Opaque" "PerformanceChecks"="False" }
 		Pass {
 			ZWrite On
-			//ColorMask 0//在Shaderlab中,ColorMask用于设置颜色通道的写掩码(write mask)，值为0时，表示该Pass不写入任何颜色通道
+			ColorMask 0//在Shaderlab中,ColorMask用于设置颜色通道的写掩码(write mask)，值为0时，表示该Pass不写入任何颜色通道
 		}
         LOD 300
 
