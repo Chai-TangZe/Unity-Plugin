@@ -3,8 +3,8 @@ using System.Collections;
 
 public class ExtendedFlycam : MonoBehaviour
 {
-    [Header ("按键开启")]
-    public KeyCode Key;
+    [Header ("按键控制")]
+    public KeyCode Key=KeyCode.Mouse1;
     [Header ("旋转速度")]
     public float cameraSensitivity = 180;
     [Header ("攀升速度")]
@@ -29,64 +29,71 @@ public class ExtendedFlycam : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKey(Key))
+        if (Key== KeyCode.None)
         {
-            if (Cursor.lockState != CursorLockMode.None)
+            cameraController ();
+        }
+        else if(Input.GetKey (Key))
+        {
+            cameraController ();
+        }
+    }
+    void cameraController()
+    {
+        if (Cursor.lockState != CursorLockMode.None)
+        {
+            rotationX += Input.GetAxis ("Mouse X") * cameraSensitivity * Time.deltaTime;
+            rotationY += Input.GetAxis ("Mouse Y") * cameraSensitivity * Time.deltaTime;
+        }
+        rotationY = Mathf.Clamp (rotationY, -90, 90);
+
+        Quaternion temp = Quaternion.AngleAxis (rotationX, Vector3.up);
+        temp *= Quaternion.AngleAxis (rotationY, Vector3.left);
+
+        transform.localRotation = Quaternion.Lerp (transform.localRotation, temp, Time.deltaTime * rotationlerp);
+
+        //transform.localRotation = Quaternion.AngleAxis( rotationX, Vector3.up );
+        //transform.localRotation *= Quaternion.AngleAxis( rotationY, Vector3.left );
+
+        if (Input.GetKey (KeyCode.LeftShift) || Input.GetKey (KeyCode.RightShift))
+        {
+            transform.position += transform.forward * ( normalMoveSpeed * fastMoveFactor ) * Input.GetAxis ("Vertical") * Time.deltaTime;
+            transform.position += transform.right * ( normalMoveSpeed * fastMoveFactor ) * Input.GetAxis ("Horizontal") * Time.deltaTime;
+
+            if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * fastMoveFactor * Time.deltaTime; }
+            if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * fastMoveFactor * Time.deltaTime; }
+        }
+        else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl))
+        {
+            transform.position += transform.forward * ( normalMoveSpeed * slowMoveFactor ) * Input.GetAxis ("Vertical") * Time.deltaTime;
+            transform.position += transform.right * ( normalMoveSpeed * slowMoveFactor ) * Input.GetAxis ("Horizontal") * Time.deltaTime;
+
+            if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * slowMoveFactor * Time.deltaTime; }
+            if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * slowMoveFactor * Time.deltaTime; }
+        }
+        else
+        {
+            transform.position += transform.forward * normalMoveSpeed * Input.GetAxis ("Vertical") * Time.deltaTime;
+            transform.position += transform.right * normalMoveSpeed * Input.GetAxis ("Horizontal") * Time.deltaTime;
+
+            if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * Time.deltaTime; }
+            if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * Time.deltaTime; }
+        }
+
+        if (Input.GetKeyDown (KeyCode.End) || Input.GetKeyDown (KeyCode.Escape))
+        {
+            if (Cursor.lockState == CursorLockMode.None)
             {
-                rotationX += Input.GetAxis ("Mouse X") * cameraSensitivity * Time.deltaTime;
-                rotationY += Input.GetAxis ("Mouse Y") * cameraSensitivity * Time.deltaTime;
-            }
-            rotationY = Mathf.Clamp (rotationY, -90, 90);
-
-            Quaternion temp = Quaternion.AngleAxis (rotationX, Vector3.up);
-            temp *= Quaternion.AngleAxis (rotationY, Vector3.left);
-
-            transform.localRotation = Quaternion.Lerp (transform.localRotation, temp, Time.deltaTime * rotationlerp);
-
-            //transform.localRotation = Quaternion.AngleAxis( rotationX, Vector3.up );
-            //transform.localRotation *= Quaternion.AngleAxis( rotationY, Vector3.left );
-
-            if (Input.GetKey (KeyCode.LeftShift) || Input.GetKey (KeyCode.RightShift))
-            {
-                transform.position += transform.forward * ( normalMoveSpeed * fastMoveFactor ) * Input.GetAxis ("Vertical") * Time.deltaTime;
-                transform.position += transform.right * ( normalMoveSpeed * fastMoveFactor ) * Input.GetAxis ("Horizontal") * Time.deltaTime;
-
-                if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * fastMoveFactor * Time.deltaTime; }
-                if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * fastMoveFactor * Time.deltaTime; }
-            }
-            else if (Input.GetKey (KeyCode.LeftControl) || Input.GetKey (KeyCode.RightControl))
-            {
-                transform.position += transform.forward * ( normalMoveSpeed * slowMoveFactor ) * Input.GetAxis ("Vertical") * Time.deltaTime;
-                transform.position += transform.right * ( normalMoveSpeed * slowMoveFactor ) * Input.GetAxis ("Horizontal") * Time.deltaTime;
-
-                if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * slowMoveFactor * Time.deltaTime; }
-                if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * slowMoveFactor * Time.deltaTime; }
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
             }
             else
             {
-                transform.position += transform.forward * normalMoveSpeed * Input.GetAxis ("Vertical") * Time.deltaTime;
-                transform.position += transform.right * normalMoveSpeed * Input.GetAxis ("Horizontal") * Time.deltaTime;
-
-                if (Input.GetKey (KeyCode.Space)) { transform.position += Vector3.up * climbSpeed * Time.deltaTime; }
-                if (Input.GetKey (KeyCode.LeftControl)) { transform.position -= Vector3.up * climbSpeed * Time.deltaTime; }
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
             }
-
-            if (Input.GetKeyDown (KeyCode.End) || Input.GetKeyDown (KeyCode.Escape))
-            {
-                if (Cursor.lockState == CursorLockMode.None)
-                {
-                    Cursor.lockState = CursorLockMode.Locked;
-                    Cursor.visible = false;
-                }
-                else
-                {
-                    Cursor.lockState = CursorLockMode.None;
-                    Cursor.visible = true;
-                }
-                //Cursor.lockState = ( Cursor.lockState == CursorLockMode.Locked ) ? CursorLockMode.None : CursorLockMode.Locked;
-                //Screen.lockCursor = ( Screen.lockCursor == false ) ? true : false;
-            }
-
+            //Cursor.lockState = ( Cursor.lockState == CursorLockMode.Locked ) ? CursorLockMode.None : CursorLockMode.Locked;
+            //Screen.lockCursor = ( Screen.lockCursor == false ) ? true : false;
         }
     }
 }
