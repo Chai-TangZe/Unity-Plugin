@@ -113,6 +113,10 @@ namespace UITool
         public RectTransform panelRectTransform;
         [Header ("可根据变换改变缩放的物体(可以为null)")]
         public RectTransform zoomable;
+        [Header("是否进行同比例缩放")]
+        public bool IsPariPassu = false;
+        [Header ("可根据变换改变自适应的物体(可以为null)")]
+        public RectTransform adaptive;
         [Header ("锚点名字")]
         public string adjustname = "调整";
         [Header ("拖拽点名字")]
@@ -147,7 +151,23 @@ namespace UITool
             //初始化
             m_rt = gameObject.GetComponent<RectTransform> ();
             panelWidthAndHeight = panelRectTransform.sizeDelta;
+            uIOriginalSizeDelta = panelRectTransform.sizeDelta;
             GetCanvas ();
+            adaptivePanel ();
+        }
+        void adaptivePanel()
+        {
+            if (adaptive)
+            {
+                adaptive.SetAnchor (AnchorPresets.TopLeft);
+                if (adaptive.sizeDelta.y < panelRectTransform.sizeDelta.y)
+                {
+                    Vector2 panelRectTransformSize = panelRectTransform.sizeDelta;
+                    panelRectTransformSize.y = adaptive.sizeDelta.y;
+                    panelRectTransform.sizeDelta = panelRectTransformSize;
+                }
+            }
+            DragUIAdaptiveSize ();
         }
         //开始拖拽触发
         public void OnBeginDrag( PointerEventData eventData )
@@ -199,6 +219,17 @@ namespace UITool
         {
             SetDraggedPosition (eventData);
             DragUIToResizeClicked (eventData);
+            DragUIAdaptiveSize ();
+        }
+        void DragUIAdaptiveSize()
+        {
+            if (adaptive != null)
+            {
+                Vector2 adaptiveSize = adaptive.sizeDelta;
+                adaptiveSize.x = panelRectTransform.sizeDelta.x - 17;
+                adaptive.sizeDelta = adaptiveSize;
+                adaptive.AdaptiveUI ();
+            }
         }
         //结束拖拽触发
         public void OnEndDrag( PointerEventData eventData )
@@ -222,6 +253,7 @@ namespace UITool
         MousePos mousePos;
         PivotPresets currentPivotLocation;
         Vector2 thisPosition;
+
         /// <summary>
         /// 开始点击记录缩放代码
         /// </summary>
@@ -256,12 +288,12 @@ namespace UITool
                 mousePos = MousePos.左上;
                 currentPivotLocation = PivotPresets.BottomRight;
             }
-            computeTransformLocation (mousePos,true);
+            computeTransformLocation (mousePos, true);
             panelRectTransform.SetPivot (currentPivotLocation);
             uIOriginalSizeDelta /= 2;
         }
 
-        void computeTransformLocation( MousePos mMousePos,bool mIsClicked)
+        void computeTransformLocation( MousePos mMousePos, bool mIsClicked )
         {
             int IsClicked = -1;
             if (mIsClicked)
@@ -277,7 +309,7 @@ namespace UITool
             {
                 case MousePos.左上:
                     thisPosition.x *= -1;
-                    panelRectTransform.anchoredPosition += thisPosition / 2* IsClicked;
+                    panelRectTransform.anchoredPosition += thisPosition / 2 * IsClicked;
                     break;
                 case MousePos.右上:
                     panelRectTransform.anchoredPosition += thisPosition / 2 * IsClicked;
@@ -308,11 +340,34 @@ namespace UITool
             // Drag 变化的变量
             Vector2 localPointerPosition;
             RectTransformUtility.ScreenPointToLocalPointInRectangle (panelRectTransform, data.position, data.pressEventCamera, out localPointerPosition);
+            
+            Vector2 ultimatelyDelta = GetWidthAndHeightInMouse (localPointerPosition);
+            if (IsPariPassu)
+                panelRectTransform.sizeDelta = GetRatioInMouse (ultimatelyDelta);
+            else
+                panelRectTransform.sizeDelta = ultimatelyDelta;
+            //计算缩放物体大小
+            if (zoomable != null)
+            {
+                if (ultimatelyDelta.y / panelWidthAndHeight.y > ultimatelyDelta.x / panelWidthAndHeight.x)
+                    zoomable.GetComponent<RectTransform> ().localScale = new Vector3 (ultimatelyDelta.x / panelWidthAndHeight.x, ultimatelyDelta.x / panelWidthAndHeight.x, 1);
+                else
+                    zoomable.GetComponent<RectTransform> ().localScale = new Vector3 (ultimatelyDelta.y / panelWidthAndHeight.y, ultimatelyDelta.y / panelWidthAndHeight.y, 1);
+            }
+        }
 
+        /// <summary>
+        /// 计算UI宽高随着鼠标位置
+        /// </summary>
+        /// <param name="localPointerPosition"></param>
+        /// <returns></returns>
+        Vector2 GetWidthAndHeightInMouse( Vector2 localPointerPosition )
+        {
             // Drag 变化值于鼠标按下拖拽前的值之间的差值
             Vector3 offsetToOriginal = localPointerPosition - originalLocalPointerPosition;
             //offsetToOriginal = offsetToOriginal * 2f;
 
+            //offsetToOriginal = new Vector3 (offsetToOriginal.x, Mathf.Abs (offsetToOriginal.x) * Mathf.Sign (offsetToOriginal.y), 0);
             // UI RectTransform 差值变化 （注意左上和右下的区别对待）
             Vector2 sizeDelta;
             switch (mousePos)
@@ -339,17 +394,26 @@ namespace UITool
                         Mathf.Clamp (sizeDelta.y, minSize.y, maxSize.y)
                 );
 
-            Vector2 ultimatelyDelta;
-            ultimatelyDelta = sizeDelta;
+            return sizeDelta;
+        }
 
-            panelRectTransform.sizeDelta = ultimatelyDelta;
-            //计算缩放物体大小
-            if (zoomable != null)
+        /// <summary>
+        /// 同比例缩放
+        /// </summary>
+        /// <param name="uIOriginalSizeDelta"></param>
+        /// <returns></returns>
+        Vector2 GetRatioInMouse( Vector2 ultimatelyDelta )
+        {
+            Vector2 sizeDelta = ultimatelyDelta / ( uIOriginalSizeDelta * 2 );
+            //Debug.Log (panelRectTransform.sizeDelta + "__" + uIOriginalSizeDelta);
+
+            if (ultimatelyDelta.y / ( uIOriginalSizeDelta * 2 ).y > ultimatelyDelta.x / ( uIOriginalSizeDelta * 2 ).x)
             {
-                if (ultimatelyDelta.y / panelWidthAndHeight.y > ultimatelyDelta.x / panelWidthAndHeight.x)
-                    zoomable.GetComponent<RectTransform> ().localScale = new Vector3 (ultimatelyDelta.x / panelWidthAndHeight.x, ultimatelyDelta.x / panelWidthAndHeight.x, 1);
-                else
-                    zoomable.GetComponent<RectTransform> ().localScale = new Vector3 (ultimatelyDelta.y / panelWidthAndHeight.y, ultimatelyDelta.y / panelWidthAndHeight.y, 1);
+                return ( uIOriginalSizeDelta * 2 ) * sizeDelta.x;
+            }
+            else
+            {
+                return ( uIOriginalSizeDelta * 2 ) * sizeDelta.y;
             }
         }
 
@@ -425,7 +489,5 @@ namespace UITool
                 }
             }
         }
-
     }
-
 }
